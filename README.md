@@ -1,1 +1,1 @@
-# nand-to-tetris
+# NAND to Tetris Course
