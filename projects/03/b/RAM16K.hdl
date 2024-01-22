@@ -13,5 +13,19 @@ CHIP RAM16K {
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    //use first 2 digits of address input to determine which RAM4K we want to access
+    DMux4Way(in=load,sel=address[12..13],a=a,b=b,c=c,d=d);
+
+    /**
+    instantiate these chips with their respective load value
+    note that only one RAM4K will take on the load input
+    and thus, only one RAM4K will potentially load the in input
+    */
+    RAM4K(in=in,load=a,address=address[0..11],out=ram1);
+    RAM4K(in=in,load=b,address=address[0..11],out=ram2);
+    RAM4K(in=in,load=c,address=address[0..11],out=ram3);
+    RAM4K(in=in,load=d,address=address[0..11],out=ram4);
+
+     //use combinatoric chip to output the RAM4K of the input address
+    Mux4Way16(a=ram1,b=ram2,c=ram3,d=ram4,sel=address[12..13],out=out);
 }

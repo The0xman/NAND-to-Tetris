@@ -18,5 +18,17 @@ CHIP PC {
     OUT out[16];
     
     PARTS:
-    //// Replace this comment with your code.
+    /**
+    Initial Note : it is VERY useful to whiteboard this circuit, so I choose not to describe each piece
+    But below I write out the circuits loop in order for clarity
+    */
+
+    Inc16(in=outloop,out=incoutloop);
+    Mux16(a=outloop,b=incoutloop,sel=inc,out=in1);
+    Mux16(a=in1,b=in,sel=load,out=in2);
+    Mux16(a=in2,b=false,sel=reset,out=toreg);
+    Register(in=toreg,load=true,out=outloop,out=out);
+
+
+
 }
