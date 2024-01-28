@@ -21,10 +21,11 @@ M=0 // R0=0, this is the set value for a white pixel in Hack
 @LOOPER
 0;JMP//Looping mechanism
 (LOOPER)// Set the screen to R0 and loop.
-@8191
-D=A
+@i
+M=0
+D=M
 @R1
-M=D //R1 = 8191, number of pixels we need to manipulate
+M=D //begin with 0 pixels colored 
 (INCR) // increment over the pixels allocated for the screen and set the values to R0.
 @R1
 D=M
@@ -40,9 +41,11 @@ D=M
 A=M
 M=D //set value of this pixel to R0
 @R1
-D=M-1
-M=D //Decrement R1
+D=M+1
+M=D //increment R1
+@8162 //number of pixels on the screen
+D=D-A
 @INCR
-D;JGE// Next if the counter is still >= 0.
+D;JLT// continue to increment so long as the counter is less than the number of pixels on the screen
 @LOOP
-0;JMP//necessary Infinite loop that signals to terminate the execution of a Hack progam
+0;JMP//ensures that this is an infinite loop
