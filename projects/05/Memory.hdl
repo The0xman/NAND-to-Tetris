@@ -19,5 +19,19 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    // Check MSB to set load for RAM and I/O devices memory spaces
+    DMux(in=load, sel=address[14], a=ramload, b=ioload);
+
+
+    // Check 2nd MSB as to whether our ioload value is meant for the screen or keyboard
+    DMux(in=ioload, sel=address[13], a=loadscreen, b=loadkbd);
+
+    // access and potentially alter (based off acquired load values) our memory spaces
+    RAM16K(in=in, load=ramload, address=address[0..13], out=outram);
+    Screen(in=in, load=loadscreen, address=address[0..12], out=outscreen);
+    Keyboard(out=outkbd); // note that the keyboard is continuously being read
+
+    //use the 2 MSBs to decide which memory space we are outputting
+    Mux16(a=outscreen, b=outkbd, sel=address[13], out=outio);
+    Mux16(a=outram, b=outio, sel=address[14], out=out);
 }

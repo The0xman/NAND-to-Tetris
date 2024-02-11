@@ -32,5 +32,50 @@ CHIP CPU {
         pc[15];          // Address of next instruction
 
     PARTS:
-    //// Replace this comment with your code.
+    //Type a-instruction : 0vvvvvvvvvvvvvvv (v = 0 or 1), it is a memory address
+    //Type c-instruction : 111accccccdddjjj (refer to 4.2.3 in book for context)
+    
+    //'decode' MSB to determine whether the passed instruction is of type a or c
+   Not(in=instruction[15],out=ains);
+   Not(in=ains,out=cins);
+
+   //If the passed instruction is of type c and our destination is A (when the d3 bit(instruction[5])is 1) make sure that the ARegister is altered according to the alout
+   And(a=cins,b=instruction[5],out=alutoa);
+   Mux16(a=instruction,b=aluout,sel=alutoa,out=aregval);
+   Or(a=ains,b=alutoa,out=loadareg);//Remember that we are also loading ARegister if the passed instruction is of type a (ains)
+   ARegister(in=aregval,load=loadareg,out=aout,out[0..14]=addressM);//don't forget to output the memory address we are currently accessing
+
+
+   //Assuming that the passed instruction is of type c use the comp mnemonic bit(Figure 4.3)(instrution[12]) to determine whether the ALU is performing a computation on A or M
+   Mux16(a=aout,b=inM,sel=instruction[12],out=amaluin);
+
+
+   //Use the comp bits 1-6 (Figure 4.3) as the combinatoric 'flags' for the ALU (Figure 2.6)
+   //Use the current value in the Dregister and the mux of our comp mnemonic (amaluin) as the ALU's data inputs / operands
+   ALU(x=dout,y=amaluin,zx=instruction[11],nx=instruction[10],zy=instruction[9],
+   ny=instruction[8],f=instruction[7],no=instruction[6],out=aluout,out=outM,zr=zrout,ng=ngout);//don't forget to output our M value if we are writing to it
+   
+   //Use the d3 bit (instruction[3]) to determine if the destination of alout is in memory (M)
+   And(a=cins,b=instruction[3],out=writeM);//ensure that the passed instruction is of type c, that way no garbage type a instruction based alu calculations are passed through
+
+   //Use d2 bit (instruction[4]) to determine if the destination of aluout is the Dregister
+   And(a=cins,b=instruction[4],out=dload);//once again; ensure that the passed instruction is of type c
+   DRegister(in=aluout,load=dload,out=dout);
+
+   //Use j-bits of instruction to determine if jump conditions are met based off of our Dregister
+   //I suspect that there is a more efficient way to do this with Dmux, but I am dumb
+   //Refer to Figure 4.5 for the logic behind the following gates
+   And(a=zrout,b=instruction[1],out=jeq);
+   And(a=ngout,b=instruction[2],out=jlt);
+   Or(a=zrout,b=ngout,out=zrorng);
+   Not(in=zrorng,out=pos);
+   And(a=pos,b=instruction[0],out=jgt);
+   Or(a=jeq,b=jlt,out=jle);
+   Or(a=jle,b=jgt,out=jmp);
+   And(a=cins,b=jmp,out=pcload);
+   Not(in=pcload,out=pcinc);
+
+   //If the jump condition is met, our PC counter goes to the memory address at t-1, else we just inc
+   //Refer to bottom of 5.3.1 **Next Instruction Fetching** paragraph for better context 
+   PC(in=aout,load=pcload,inc=pcinc,reset=reset,out[0..14]=pc);
 }
